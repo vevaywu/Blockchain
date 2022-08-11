@@ -23,9 +23,8 @@ struct Block: Converable {
     var transactions: [Transaction] //区块记录的交易信息
     var nonce: Double               //区块工作量 - 找到有效区块所循环的次数
     var previousHash: String        //前一个区块的哈希
-
-    var hashValue: String {         //区块的哈希
-        return self.description.sha256
+    var hash: String {               //区块的哈希
+        return Block.calcHash(self)
     }
     
     init(_ preIndex: Int, transactions: [Transaction], preNonce: Double, preHash: String) {
@@ -34,6 +33,11 @@ struct Block: Converable {
         self.transactions = transactions
         self.nonce = preNonce
         self.previousHash = preHash
+    }
+    
+    static func calcHash(_ block: Block) -> String {
+        let dict = block.dictionary()
+        return dict.toJsonString().sha256
     }
 }
 
@@ -79,7 +83,7 @@ class Blockchain {
     /// - Returns: 返回工作量
     func proofOfWork(_ block: Block) -> Double {
         let lastNonce = block.nonce
-        let lastHash = block.hashValue
+        let lastHash = block.hash
         
         var nonce: Double = 0
         while validNonce(lastNonce, nonce, lastHash) == false {
@@ -132,7 +136,7 @@ class Blockchain {
             print("lastBlock: \(lastBlock.description)")
             print("block: \(block.description)")
             print("\n-----------------------------\n")
-            let lastBlockHash = lastBlock.hashValue
+            let lastBlockHash = lastBlock.hash
             if lastBlockHash != block.previousHash {
                 return false
             }
@@ -172,7 +176,7 @@ class Blockchain {
         let proof = self.proofOfWork(lastBlock)
         self.newTransactions("0", kNodeIdentifier, 100)
 
-        let preHash = lastBlock.hashValue
+        let preHash = lastBlock.hash
         _ = self.newBlock(proof, preHash)
         print("挖矿成功: \(Date())")
         
